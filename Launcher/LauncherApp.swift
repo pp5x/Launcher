@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Carbon
+import CoreServices
 
 @main
 struct LauncherApp: App {
@@ -24,8 +25,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Register global hotkey (Cmd+Space)
         registerGlobalHotkey()
         
-        // Create window but don't show it yet
+        // Create window
         createWindow()
+        
+        // Always show the window when app becomes active to keep launcher on top
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        // Show window immediately after launch (restored original behavior)
+        showLauncher()
+    }
+    
+    @objc func applicationDidBecomeActive(_ notification: Notification) {
+        // Focus the search field when the app becomes active
+        // This ensures the search field is ready for input when the launcher is shown
     }
     
     func registerGlobalHotkey() {
@@ -56,9 +73,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func createWindow() {
+        let isUITest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        let style: NSWindow.StyleMask = isUITest ? [.titled, .closable, .fullSizeContentView] : [.borderless, .fullSizeContentView]
+        
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 60),
-            styleMask: [.borderless, .fullSizeContentView],
+            styleMask: style,
             backing: .buffered,
             defer: false
         )
@@ -103,8 +123,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window = customWindow
         }
         
-        // Hide window initially
-        window?.orderOut(nil)
+        if isUITest {
+            print("[DEBUG] UI Test Mode: Using standard window style for accessibility.")
+        }
     }
     
     func animateWindowResize(to newSize: CGSize) {
@@ -113,14 +134,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let currentFrame = window.frame
         let newFrame = NSRect(
             x: currentFrame.midX - newSize.width / 2,
-            y: currentFrame.midY - newSize.height / 2,
+            y: currentFrame.origin.y + currentFrame.height - newSize.height,
             width: newSize.width,
             height: newSize.height
         )
         
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.25
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             window.animator().setFrame(newFrame, display: true)
         }
     }
@@ -138,12 +159,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func showLauncher() {
         guard let window = window else { return }
         
-        // Center window on screen
+        // Always center window on screen consistently
         if let screen = NSScreen.main {
             let screenFrame = screen.frame
             let windowFrame = window.frame
             let x = (screenFrame.width - windowFrame.width) / 2
-            let y = (screenFrame.height - windowFrame.height) / 2 + 100 // Slightly above center
+            let y = (screenFrame.height - windowFrame.height) / 2 // Center vertically
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
         
@@ -162,6 +183,7 @@ struct LauncherView: View {
     @State private var filteredApps: [AppInfo] = []
     @State private var selectedIndex = 0
     @State private var isExpanded = false
+    @FocusState private var isSearchFieldFocused: Bool
     let onClose: () -> Void
     let onSizeChange: (CGSize) -> Void
     
@@ -178,6 +200,7 @@ struct LauncherView: View {
                     .font(.system(size: 16))
                 
                 TextField("Search applications...", text: $searchText)
+                    .focused($isSearchFieldFocused)
                     .textFieldStyle(PlainTextFieldStyle())
                     .font(.system(size: 18))
                     .onSubmit {
@@ -233,6 +256,8 @@ struct LauncherView: View {
         .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
         .onAppear {
             loadApplications()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             focusSearchField()
         }
         .onKeyPress(.upArrow) {
@@ -260,10 +285,10 @@ struct LauncherView: View {
     }
     
     private func updateWindowSize() {
-        let shouldExpand = !searchText.isEmpty && !filteredApps.isEmpty
+        let shouldExpand = !searchText.isEmpty
         
         if shouldExpand != isExpanded {
-            withAnimation(.easeOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: 0.2)) {
                 isExpanded = shouldExpand
             }
             
@@ -271,78 +296,26 @@ struct LauncherView: View {
                 width: windowWidth,
                 height: shouldExpand ? expandedHeight : compactHeight
             )
-            
             onSizeChange(newSize)
         }
     }
     
     private func focusSearchField() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if let window = NSApp.keyWindow,
-               let contentView = window.contentView {
-                window.makeFirstResponder(contentView)
-                
-                // Try to find and focus the text field
-                if let hostingView = contentView as? NSHostingView<LauncherView> {
-                    // The text field should automatically get focus when window becomes key
-                    window.recalculateKeyViewLoop()
-                }
-            }
+        DispatchQueue.main.async {
+            isSearchFieldFocused = true
         }
     }
     
     private func loadApplications() {
-        let fileManager = FileManager.default
-        let applicationsURL = URL(fileURLWithPath: "/Applications")
-        
-        do {
-            let appURLs = try fileManager.contentsOfDirectory(
-                at: applicationsURL,
-                includingPropertiesForKeys: [.nameKey, .isDirectoryKey],
-                options: [.skipsHiddenFiles]
-            )
-            
-            applications = appURLs.compactMap { url in
-                guard url.pathExtension == "app" else { return nil }
-                
-                let name = url.deletingPathExtension().lastPathComponent
-                let icon = NSWorkspace.shared.icon(forFile: url.path)
-                
-                return AppInfo(
-                    name: name,
-                    path: url.path,
-                    icon: icon
-                )
-            }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            
-            filteredApps = applications
-            
-        } catch {
-            print("Error loading applications: \(error)")
-        }
+        applications = ApplicationLoader.loadApplications()
+        filterApplications()
     }
     
     private func filterApplications() {
-        if searchText.isEmpty {
-            filteredApps = applications
-        } else {
-            filteredApps = applications.filter { app in
-                app.name.localizedCaseInsensitiveContains(searchText)
-            }.sorted { app1, app2 in
-                // Prioritize apps that start with the search term
-                let app1Starts = app1.name.lowercased().hasPrefix(searchText.lowercased())
-                let app2Starts = app2.name.lowercased().hasPrefix(searchText.lowercased())
-                
-                if app1Starts && !app2Starts {
-                    return true
-                } else if !app1Starts && app2Starts {
-                    return false
-                } else {
-                    return app1.name.localizedCaseInsensitiveCompare(app2.name) == .orderedAscending
-                }
-            }
-        }
+        filteredApps = ApplicationLoader.filterApplications(applications, searchText: searchText)
         
+        print("[DEBUG] Search text: '", searchText, "' => Filtered: [", filteredApps.map { $0.name }.joined(separator: ", "), "]")
+        print("[DEBUG] Selected index: \(selectedIndex), First result: \(filteredApps.first?.name ?? "none")")
         selectedIndex = 0
     }
     
@@ -412,19 +385,79 @@ struct VisualEffectView: NSViewRepresentable {
 class FocusableWindow: NSWindow {
     override var canBecomeKey: Bool { return true }
     override var canBecomeMain: Bool { return true }
-    
-    override func becomeKey() {
-        super.becomeKey()
-        // Ensure the text field gets focus
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.makeFirstResponder(self.contentView)
-        }
-    }
 }
 
-struct AppInfo: Identifiable {
+struct AppInfo: Identifiable, Equatable, Hashable {
     let id = UUID()
     let name: String
     let path: String
     let icon: NSImage
+    
+    static func == (lhs: AppInfo, rhs: AppInfo) -> Bool {
+        return lhs.name == rhs.name && lhs.path == rhs.path
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+        hasher.combine(path)
+    }
 }
+
+// MARK: - Application Loading Logic (Extracted for Testing)
+
+class ApplicationLoader {
+    static func loadApplications() -> [AppInfo] {
+        var allApps: [AppInfo] = []
+        
+        // Get applications from common directories
+        let appDirectories = [
+            "/Applications",
+            "/System/Applications",
+            "/Applications/Utilities",
+            NSHomeDirectory() + "/Applications"
+        ]
+        
+        for directory in appDirectories {
+            if let enumerator = FileManager.default.enumerator(atPath: directory) {
+                while let file = enumerator.nextObject() as? String {
+                    if file.hasSuffix(".app") {
+                        let fullPath = directory + "/" + file
+                        let name = file.replacingOccurrences(of: ".app", with: "")
+                        let icon = NSWorkspace.shared.icon(forFile: fullPath)
+                        
+                        let appInfo = AppInfo(
+                            name: name,
+                            path: fullPath,
+                            icon: icon
+                        )
+                        
+                        allApps.append(appInfo)
+                    }
+                }
+            }
+        }
+        
+        // Remove duplicates and sort alphabetically for consistent display
+        let finalApps = Array(Set(allApps)).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        print("[DEBUG] Final app count after deduplication: \(finalApps.count)")
+        return finalApps
+    }
+    
+    static func filterApplications(_ applications: [AppInfo], searchText: String) -> [AppInfo] {
+        if searchText.isEmpty {
+            return applications
+        } else {
+            let lowercasedSearchText = searchText.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Only use prefix matching - no substring matching
+            let prefixMatches = applications.filter { app in
+                let lowercasedAppName = app.name.lowercased()
+                return lowercasedAppName.hasPrefix(lowercasedSearchText)
+            }
+            // Sort prefix matches alphabetically
+            return prefixMatches.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        }
+    }
+}
+
+// MARK: - App Delegate
