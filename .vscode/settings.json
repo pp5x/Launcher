@@ -1,0 +1,35 @@
+{
+    "files.associations": {
+        "*.swift": "swift"
+    },
+    "swift.path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+    "swift.buildPath": "${workspaceFolder}/build",
+    "swift.targetBuildPath": "${workspaceFolder}/build/Debug",
+    "swift.debuggerPath": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb",
+    "swift.swiftEnvironmentVariables": {
+        "DEVELOPER_DIR": "/Applications/Xcode.app"
+    },
+    "swift.buildConfiguration": "Debug",
+    "swift.scheme": "Launcher",
+    "swift.project": "Launcher.xcodeproj",
+    "terminal.integrated.defaultProfile.osx": "fish",
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "files.exclude": {
+        "**/build": true,
+        "**/.DS_Store": true,
+        "**/DerivedData": true
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/DerivedData": true,
+        "**/node_modules": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/DerivedData/**": true
+    },
+    "task.autoDetect": "on",
+    "task.slowProviderWarning": false,
+    "swift.enableSourceKitLSP": true,
+    "swift.sourcekit-lsp.serverPath": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp"
+}

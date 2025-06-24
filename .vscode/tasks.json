@@ -1,0 +1,195 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "run-launcher",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "-configuration", "Debug",
+                "build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "build-launcher"
+        },
+        {
+            "label": "build-launcher",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "-configuration", "Debug",
+                "build"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "build-launcher-release",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "-configuration", "Release",
+                "build"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "clean-build",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "clean"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "run-tests",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "-destination", "platform=macOS",
+                "test"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "open-in-xcode",
+            "type": "shell",
+            "command": "open",
+            "args": [
+                "Launcher.xcodeproj"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "launch-app",
+            "type": "shell",
+            "command": "find",
+            "args": [
+                "${env:HOME}/Library/Developer/Xcode/DerivedData",
+                "-name", "Launcher.app",
+                "-type", "d",
+                "-path", "*/Build/Products/Debug/*",
+                "-exec", "open", "{}", ";"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "dependsOn": "build-launcher"
+        },
+        {
+            "label": "find-and-launch-app",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "APP_PATH=$(find ${HOME}/Library/Developer/Xcode/DerivedData -name 'Launcher.app' -type d -path '*/Build/Products/Debug/*' | head -1) && if [ -n \"$APP_PATH\" ]; then open \"$APP_PATH\"; else echo 'App not found. Building first...'; xcodebuild -project Launcher.xcodeproj -scheme Launcher -configuration Debug build && find ${HOME}/Library/Developer/Xcode/DerivedData -name 'Launcher.app' -type d -path '*/Build/Products/Debug/*' -exec open {} \\;; fi"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+} 

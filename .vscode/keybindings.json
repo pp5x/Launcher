@@ -1,0 +1,25 @@
+[
+    {
+        "key": "cmd+shift+r",
+        "command": "workbench.action.debug.start",
+        "args": {
+            "configuration": "🚀 Run Launcher App"
+        },
+        "when": "resourceExtname == .swift"
+    },
+    {
+        "key": "cmd+shift+b",
+        "command": "workbench.action.tasks.runTask",
+        "args": "build-launcher"
+    },
+    {
+        "key": "cmd+shift+t",
+        "command": "workbench.action.tasks.runTask",
+        "args": "run-tests"
+    },
+    {
+        "key": "cmd+shift+l",
+        "command": "workbench.action.tasks.runTask",
+        "args": "launch-app"
+    }
+] 

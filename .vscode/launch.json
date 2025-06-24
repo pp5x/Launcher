@@ -1,0 +1,62 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🚀 Run Launcher App",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/Library/Developer/Xcode/DerivedData/Launcher-cbzeuchggxsgdhbpecnphfgvguwc/Build/Products/Debug/Launcher.app/Contents/MacOS/Launcher",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-launcher",
+            "stopOnEntry": false,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "🔧 Debug Launcher",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/Library/Developer/Xcode/DerivedData/Launcher-cbzeuchggxsgdhbpecnphfgvguwc/Build/Products/Debug/Launcher.app/Contents/MacOS/Launcher",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-launcher",
+            "stopOnEntry": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "⚡ Quick Launch (No Build)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/Library/Developer/Xcode/DerivedData/Launcher-cbzeuchggxsgdhbpecnphfgvguwc/Build/Products/Debug/Launcher.app/Contents/MacOS/Launcher",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "📦 Run Launcher (Release)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${env:HOME}/Library/Developer/Xcode/DerivedData/Launcher-cbzeuchggxsgdhbpecnphfgvguwc/Build/Products/Release/Launcher.app/Contents/MacOS/Launcher",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-launcher-release",
+            "stopOnEntry": false,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "🧪 Run Tests",
+            "type": "lldb",
+            "request": "launch",
+            "program": "/usr/bin/xcodebuild",
+            "args": [
+                "-project", "Launcher.xcodeproj",
+                "-scheme", "Launcher",
+                "-destination", "platform=macOS",
+                "test"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+} 
